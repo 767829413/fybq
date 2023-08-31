@@ -85,3 +85,20 @@
 		* 4200 * 600s = 7 笔/秒
 	* 单位
 		* 1BTC = $10^{8}$ sat
+
+6. 交易流程
+	* ![1.png](https://s2.loli.net/2023/08/31/ziIwq1VhAW9r4dS.png)
+		1. 创建交易
+		2. 广播交易
+		3. 挖矿竞争
+		4. 胜出!广播结束
+		5. 记账,获得奖励,广播账本
+		6. 同步账本,开启新一轮竞争
+
+7. 使用的技术
+	* [密码学](https://zh.wikipedia.org/wiki/%E5%AF%86%E7%A0%81%E5%AD%A6)
+	* [P2P网络](https://zh.wikipedia.org/wiki/%E5%B0%8D%E7%AD%89%E7%B6%B2%E8%B7%AF)
+	* [工作量证明](https://zh.wikipedia.org/wiki/%E5%B7%A5%E4%BD%9C%E9%87%8F%E8%AD%89%E6%98%8E)
+	* [base58](https://zh.wikipedia.org/wiki/Base58)
+6. 地址生成规则
+	* [地址生成流程](https://gobittest.appspot.com/Address)
