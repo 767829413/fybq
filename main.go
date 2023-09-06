@@ -1,15 +1,37 @@
 package main
 
-import "fmt"
+import (
+	"bytes"
+	"encoding/gob"
+	"fmt"
+	"log"
+)
+
+type People struct {
+	Name string
+	Age  int
+}
 
 func main() {
-	stepBlock := 21.0 // 每21w个区块奖励减半
-	curGet := 50.0    // 初识奖励 50
-	total := 0.0
-	for curGet > 0 {
-		curNum := stepBlock * curGet
-		curGet *= 0.5
-		total += curNum
+	var (
+		p   People = People{Name: "xiaoming", Age: 15}
+		buf bytes.Buffer
+	)
+	// 编码
+	encode := gob.NewEncoder(&buf)
+	err := encode.Encode(&p)
+	if err != nil {
+		log.Fatal(err)
 	}
-	fmt.Println(total)
+	fmt.Printf("编码后的xiaoming %v\n", buf.Bytes())
+	// 解码
+	decode := gob.NewDecoder(bytes.NewReader(buf.Bytes()))
+
+	var pp People
+	err = decode.Decode(&pp)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pp.Age = 100
+	fmt.Printf("解码后的xiaoming %v\n", pp)
 }

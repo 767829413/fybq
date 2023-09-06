@@ -1,11 +1,14 @@
 package util
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/binary"
+	"encoding/gob"
 	"encoding/pem"
 	"fmt"
 	"hash/fnv"
@@ -175,4 +178,31 @@ func GenerateEccKey(c elliptic.Curve, priPath, pubPath string) error {
 		return err
 	}
 	return nil
+}
+
+// uint64转[]byte
+func Uint64ToBytes(x uint64) []byte {
+	bytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(bytes, x)
+	return bytes
+}
+
+// struct转[]byte
+func StructToBytes(x any) []byte {
+	var buf bytes.Buffer
+	encode := gob.NewEncoder(&buf)
+	err := encode.Encode(x)
+	if err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
+}
+
+// []byte转struct
+func BytesToStruct(x []byte, obj any) {
+	decode := gob.NewDecoder(bytes.NewReader(x))
+	err := decode.Decode(obj)
+	if err != nil {
+		panic(err)
+	}
 }
