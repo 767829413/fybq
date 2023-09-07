@@ -53,7 +53,7 @@ func (pow *ProofOfWorkload) Run() ([]byte, uint64) {
 		// 3-b. 没找到,继续找,随机数+1
 		if tmpBigInt.Cmp(pow.target) == -1 {
 			// 3-a. 找到了,退出返回
-			fmt.Printf("挖矿成功! hash: %x, nonce: %d\n", hash, nonce)
+			fmt.Printf("Mining success! hash: %x, nonce: %d\n", hash, nonce)
 			return hash, nonce
 		} else {
 			nonce++

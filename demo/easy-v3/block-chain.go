@@ -15,7 +15,6 @@ const (
 type BlockChain struct {
 	db       *bolt.DB
 	lastHash []byte
-	Blocks   []*Block
 }
 
 func (bc *BlockChain) AddBlock(data string) {
@@ -23,14 +22,25 @@ func (bc *BlockChain) AddBlock(data string) {
 	bc.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blockBucketName))
 		if bucket == nil {
-			log.Fatal(blockBucketName + "is not found")
+			log.Fatal("AddBlock " + blockBucketName + " is not found")
 		}
 		bucket.Put(block.Hash, block.ToBytes())
 		bucket.Put([]byte(lastHashKey), block.Hash)
 		bc.lastHash = block.Hash
 		return nil
 	})
-	bc.Blocks = append(bc.Blocks, block)
+}
+
+func (bc *BlockChain) NewIterator() *BlockChainIterator {
+	return &BlockChainIterator{
+		db: bc.db,
+		// 最初指向末尾
+		curHashPointer: bc.lastHash,
+	}
+}
+
+func (bc *BlockChain) CloseDB() error {
+	return bc.db.Close()
 }
 
 func NewBlockChain() *BlockChain {
@@ -44,18 +54,18 @@ func NewBlockChain() *BlockChain {
 		if bucket == nil {
 			bucket, err = tx.CreateBucket([]byte(blockBucketName))
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("NewBlockChain CreateBucket " + blockBucketName + " is faild: " + err.Error())
 			}
 			// 创世块
 			block := NewGenesisBlock()
 			lastHash = block.Hash
 			err = bucket.Put(block.Hash, block.ToBytes())
 			if err != nil {
-				log.Fatal("bucket.Put(block.Hash, block.ToBytes())", err)
+				log.Fatal("NewBlockChain bucket.Put(block.Hash, block.ToBytes())", err)
 			}
 			err = bucket.Put([]byte(lastHashKey), lastHash)
 			if err != nil {
-				log.Fatal("bucket.Put([]byte(lastHashKey), lastHash)", err)
+				log.Fatal("NewBlockChain bucket.Put([]byte(lastHashKey), lastHash)", err)
 			}
 		} else {
 			lastHash = bucket.Get([]byte(lastHashKey))
@@ -66,6 +76,5 @@ func NewBlockChain() *BlockChain {
 	return &BlockChain{
 		db:       db,
 		lastHash: lastHash,
-		Blocks:   []*Block{},
 	}
 }
