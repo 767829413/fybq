@@ -46,9 +46,4 @@
 
 * 创世块: Block #0
 * ![5.png](https://s2.loli.net/2023/09/05/bJ2anTgtLusYIwW.png)
-
-## 交易
-
-1. 转账方式
-    * 传统银行
         
