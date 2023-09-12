@@ -41,7 +41,7 @@ func (pow *ProofOfWorkload) Run() ([]byte, uint64) {
 			util.Uint64ToBytes(block.TimeStamp),
 			util.Uint64ToBytes(block.Difficulty),
 			util.Uint64ToBytes(nonce),
-			block.Data,
+			// block.Data,
 		}, nil)
 		// 2. 哈希运算
 		h := sha256.Sum256(info)
@@ -49,7 +49,6 @@ func (pow *ProofOfWorkload) Run() ([]byte, uint64) {
 		tmpBigInt := big.Int{}
 		tmpBigInt.SetBytes(hash)
 		// 3. 比较pow中的target进行比较
-
 		// 3-b. 没找到,继续找,随机数+1
 		if tmpBigInt.Cmp(pow.target) == -1 {
 			// 3-a. 找到了,退出返回

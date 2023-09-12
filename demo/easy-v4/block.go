@@ -23,20 +23,20 @@ type Block struct {
 	Nonce uint64
 	// 当前区块哈希
 	Hash []byte
-	// 数据
-	Data []byte
+	// 交易数据
+	Transactions []*Transaction
 }
 
-func NewBlock(data string, prevBlockHash []byte) *Block {
+func NewBlock(txs []*Transaction, prevBlockHash []byte) *Block {
 	block := &Block{
-		Version:    00,
-		MerkelRoot: []byte{},
-		TimeStamp:  uint64(time.Now().Unix()),
-		Difficulty: 0,
-		Nonce:      0,
-		PrevHash:   prevBlockHash,
-		Data:       []byte(data),
+		Version:      00,
+		TimeStamp:    uint64(time.Now().Unix()),
+		Difficulty:   0,
+		Nonce:        0,
+		PrevHash:     prevBlockHash,
+		Transactions: txs,
 	}
+	block.MerkelRoot = block.MakeMerkelRoot()
 	pow := NewProofOfWorkload(block)
 	// 查找目标随机数不断进行哈希运算
 	hash, nonce := pow.Run()
@@ -47,6 +47,7 @@ func NewBlock(data string, prevBlockHash []byte) *Block {
 }
 
 func (block *Block) SetHash() {
+	// 只需要对区块头进行哈希
 	info := bytes.Join([][]byte{
 		util.Uint64ToBytes(block.Version),
 		block.PrevHash,
@@ -54,17 +55,17 @@ func (block *Block) SetHash() {
 		util.Uint64ToBytes(block.TimeStamp),
 		util.Uint64ToBytes(block.Difficulty),
 		util.Uint64ToBytes(block.Nonce),
-		block.Data,
 	}, nil)
 	hash := sha256.Sum256(info)
 	block.Hash = hash[:]
 }
 
-// 结构体转[]byte
-func (block *Block) ToBytes() []byte {
-	return util.StructToBytes(block)
+// 创建Merkel Root
+func (block *Block) MakeMerkelRoot() []byte {
+	return nil
 }
 
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", nil)
+func NewGenesisBlock(addr string) *Block {
+	coinbase := NewCoinbase(addr, "Genesis Block")
+	return NewBlock([]*Transaction{coinbase}, nil)
 }

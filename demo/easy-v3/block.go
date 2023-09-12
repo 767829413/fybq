@@ -62,7 +62,7 @@ func (block *Block) SetHash() {
 
 // 结构体转[]byte
 func (block *Block) ToBytes() []byte {
-	return util.StructToBytes(block)
+	return util.StructToBytes(&block)
 }
 
 func NewGenesisBlock() *Block {
