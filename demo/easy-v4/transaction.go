@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/gob"
+	"fmt"
 	"log"
 )
 
@@ -23,9 +24,9 @@ type TXOutput struct {
 }
 
 type Transaction struct {
-	TXID      []byte     // 交易ID
-	TXInputs  []TXInput  // 交易输入
-	TXOutputs []TXOutput // 交易输出
+	TXID      []byte      // 交易ID
+	TXInputs  []*TXInput  // 交易输入
+	TXOutputs []*TXOutput // 交易输出
 }
 
 func (tx *Transaction) SetTXID() {
@@ -54,11 +55,50 @@ func (tx *Transaction) IsCoinbase() bool {
 // 没有引用的Output的索引值
 // 矿工由于挖矿时无需指定签名,所以签名sig字段自由填写,一般是矿池名字
 func NewCoinbase(addr, data string) *Transaction {
-	input := TXInput{Sig: data, Index: -1, QTXID: nil}
-	output := TXOutput{Value: reward, PubKeyHash: addr}
+	input := &TXInput{Sig: data, Index: -1, QTXID: nil}
+	output := &TXOutput{Value: reward, PubKeyHash: addr}
 	tx := &Transaction{
-		TXInputs:  []TXInput{input},
-		TXOutputs: []TXOutput{output},
+		TXInputs:  []*TXInput{input},
+		TXOutputs: []*TXOutput{output},
+	}
+	tx.SetTXID()
+	return tx
+}
+
+// 创建普通的转账交易
+
+func NewTransaction(from, to string, amount float64, bc *BlockChain) *Transaction {
+	var (
+		inputs  []*TXInput
+		outputs []*TXOutput
+	)
+	// 1. 找到合理的UTXO集合
+	utxos, calc := bc.FindTransactionUTXOs(from, amount)
+	if calc < amount {
+		fmt.Printf("%x Current balance is insufficient!", from)
+		return nil
+	}
+	// 2. 将这些utxo转成input
+	for idx, idxArr := range utxos {
+		for _, index := range idxArr {
+			input := &TXInput{
+				QTXID: []byte(idx),
+				Index: index,
+				Sig:   from,
+			}
+			inputs = append(inputs, input)
+		}
+	}
+	// 3. 创建output
+	output := &TXOutput{Value: amount, PubKeyHash: to}
+	outputs = append(outputs, output)
+	if calc > amount {
+		outputs = append(outputs, &TXOutput{Value: calc - amount, PubKeyHash: from})
+	}
+	// 4. 如果有零钱需要找零
+	tx := &Transaction{
+		TXInputs:  inputs,
+		TXOutputs: outputs,
 	}
 	tx.SetTXID()
 	return tx

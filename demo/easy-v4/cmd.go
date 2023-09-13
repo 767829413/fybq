@@ -38,9 +38,21 @@ var printCmd = &cobra.Command{
 
 var getBalanceCmd = &cobra.Command{
 	Use:   "getBalance",
-	Short: "Get the balance of the specified address",
+	Short: "FROM makes a transaction to TO",
 	Run: func(cmd *cobra.Command, args []string) {
 		getBalance(NewBlockChain(addr))
+	},
+}
+
+var from string
+var to string
+var amount float64
+var miner string
+var sendCmd = &cobra.Command{
+	Use:   "send",
+	Short: "FROM makes a single transaction to TO while MINER mines and writes to DATA",
+	Run: func(cmd *cobra.Command, args []string) {
+		send(NewBlockChain(addr))
 	},
 }
 
@@ -51,12 +63,31 @@ func init() {
 	addCmd.MarkPersistentFlagRequired("address")
 	addCmd.Flag("data")
 	addCmd.Flag("address")
+
 	getBalanceCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR ADDRESS", "addBlock address (required)")
 	getBalanceCmd.MarkPersistentFlagRequired("address")
 	getBalanceCmd.Flag("address")
+
+	sendCmd.PersistentFlags().StringVarP(&from, "from", "f", "FROM ADDRESS", "send from (required)")
+	sendCmd.PersistentFlags().StringVarP(&to, "to", "t", "TO ADDRESS", "send to (required)")
+	sendCmd.PersistentFlags().Float64VarP(&amount, "amount", "a", 0.0, "send amount (required)")
+	sendCmd.PersistentFlags().StringVarP(&miner, "miner", "m", "MINER ADDRESS", "send miner (required)")
+	sendCmd.PersistentFlags().StringVarP(&data, "data", "d", "YOUR CONTENT DATA", "send data (required)")
+	sendCmd.MarkPersistentFlagRequired("from")
+	sendCmd.MarkPersistentFlagRequired("to")
+	sendCmd.MarkPersistentFlagRequired("amount")
+	sendCmd.MarkPersistentFlagRequired("miner")
+	sendCmd.MarkPersistentFlagRequired("data")
+	sendCmd.Flag("from")
+	sendCmd.Flag("to")
+	sendCmd.Flag("amount")
+	sendCmd.Flag("miner")
+	sendCmd.Flag("data")
+
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(printCmd)
 	rootCmd.AddCommand(getBalanceCmd)
+	rootCmd.AddCommand(sendCmd)
 }
 
 func Execute() {
@@ -104,4 +135,19 @@ func getBalance(blockChain *BlockChain) {
 		balance += utxo.Value
 	}
 	fmt.Printf("The balance of %x is: %f\n", addr, balance)
+}
+
+func send(blockChain *BlockChain) {
+	fmt.Println("Commencement of transfers")
+	// 1. 创建挖矿交易
+	coinBase := NewCoinbase(miner, data)
+	// 2. 创建普通交易
+	txs := NewTransaction(from, to, amount, blockChain)
+	if txs == nil {
+		fmt.Println("send failed,closing of the transaction")
+		return
+	}
+	// 3. 添加区块
+	blockChain.AddBlock([]*Transaction{coinBase, txs})
+	fmt.Println("Closing of the transaction")
 }

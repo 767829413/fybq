@@ -45,9 +45,17 @@ func (bc *BlockChain) CloseDB() error {
 	return bc.db.Close()
 }
 
+func (bc *BlockChain) FindTransactionUTXOs(addr string, amount float64) (map[string][]int64, float64) {
+	// 找到的合理的UTXO集合
+	var UTXO = make(map[string][]int64)
+	// 包含的总额
+	var calc float64
+	return UTXO, calc
+}
+
 // 找到指定地址的所有UTXO
-func (bc *BlockChain) FindUTXOs(addr string) []TXOutput {
-	var UTXO []TXOutput
+func (bc *BlockChain) FindUTXOs(addr string) []*TXOutput {
+	var UTXO []*TXOutput
 	var spendUTXOs = make(map[string][]int64)
 	bci := bc.NewIterator()
 	// 遍历区块
