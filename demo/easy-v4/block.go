@@ -61,6 +61,7 @@ func (block *Block) SetHash() {
 }
 
 // 创建Merkel Root
+// 直接拼接非二叉树实现
 func (block *Block) MakeMerkelRoot() []byte {
 	return nil
 }
