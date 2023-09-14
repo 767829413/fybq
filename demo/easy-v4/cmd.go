@@ -57,22 +57,26 @@ var sendCmd = &cobra.Command{
 }
 
 func init() {
-	addCmd.PersistentFlags().StringVarP(&data, "data", "d", "YOUR CONTENT DATA", "addBlock data (required)")
-	addCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR ADDRESS", "addBlock address (required)")
+	addCmd.PersistentFlags().StringVarP(&data, "data", "d", "YOUR_CONTENT_DATA", "addBlock data (required)")
+	addCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "addBlock address (required)")
 	addCmd.MarkPersistentFlagRequired("data")
 	addCmd.MarkPersistentFlagRequired("address")
 	addCmd.Flag("data")
 	addCmd.Flag("address")
 
-	getBalanceCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR ADDRESS", "addBlock address (required)")
+	printCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "addBlock address (required)")
+	printCmd.MarkPersistentFlagRequired("address")
+	printCmd.Flag("address")
+
+	getBalanceCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "addBlock address (required)")
 	getBalanceCmd.MarkPersistentFlagRequired("address")
 	getBalanceCmd.Flag("address")
 
-	sendCmd.PersistentFlags().StringVarP(&from, "from", "f", "FROM ADDRESS", "send from (required)")
-	sendCmd.PersistentFlags().StringVarP(&to, "to", "t", "TO ADDRESS", "send to (required)")
+	sendCmd.PersistentFlags().StringVarP(&from, "from", "f", "FROM_ADDRESS", "send from (required)")
+	sendCmd.PersistentFlags().StringVarP(&to, "to", "t", "TO_ADDRESS", "send to (required)")
 	sendCmd.PersistentFlags().Float64VarP(&amount, "amount", "a", 0.0, "send amount (required)")
-	sendCmd.PersistentFlags().StringVarP(&miner, "miner", "m", "MINER ADDRESS", "send miner (required)")
-	sendCmd.PersistentFlags().StringVarP(&data, "data", "d", "YOUR CONTENT DATA", "send data (required)")
+	sendCmd.PersistentFlags().StringVarP(&miner, "miner", "m", "MINER_ADDRESS", "send miner (required)")
+	sendCmd.PersistentFlags().StringVarP(&data, "data", "d", "YOUR_CONTENT_DATA", "send data (required)")
 	sendCmd.MarkPersistentFlagRequired("from")
 	sendCmd.MarkPersistentFlagRequired("to")
 	sendCmd.MarkPersistentFlagRequired("amount")
@@ -134,7 +138,7 @@ func getBalance(blockChain *BlockChain) {
 	for _, utxo := range utxos {
 		balance += utxo.Value
 	}
-	fmt.Printf("The balance of %x is: %f\n", addr, balance)
+	fmt.Printf("The balance of %s is: %f\n", addr, balance)
 }
 
 func send(blockChain *BlockChain) {

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	reward = 12.5
+	reward = 50.0
 )
 
 type TXInput struct {
@@ -66,7 +66,6 @@ func NewCoinbase(addr, data string) *Transaction {
 }
 
 // 创建普通的转账交易
-
 func NewTransaction(from, to string, amount float64, bc *BlockChain) *Transaction {
 	var (
 		inputs  []*TXInput
