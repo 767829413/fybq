@@ -18,15 +18,14 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-var data string
-var addr string
-var addCmd = &cobra.Command{
-	Use:   "addBlock",
-	Short: "Add a block,--data or -d DATA",
-	Run: func(cmd *cobra.Command, args []string) {
-		addBlock(NewBlockChain(addr))
-	},
-}
+var (
+	data   string
+	addr   string
+	from   string
+	to     string
+	amount float64
+	miner  string
+)
 
 var printCmd = &cobra.Command{
 	Use:   "printChain",
@@ -44,10 +43,6 @@ var getBalanceCmd = &cobra.Command{
 	},
 }
 
-var from string
-var to string
-var amount float64
-var miner string
 var sendCmd = &cobra.Command{
 	Use:   "send",
 	Short: "FROM makes a single transaction to TO while MINER mines and writes to DATA",
@@ -57,13 +52,6 @@ var sendCmd = &cobra.Command{
 }
 
 func init() {
-	addCmd.PersistentFlags().StringVarP(&data, "data", "d", "YOUR_CONTENT_DATA", "addBlock data (required)")
-	addCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "addBlock address (required)")
-	addCmd.MarkPersistentFlagRequired("data")
-	addCmd.MarkPersistentFlagRequired("address")
-	addCmd.Flag("data")
-	addCmd.Flag("address")
-
 	printCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "addBlock address (required)")
 	printCmd.MarkPersistentFlagRequired("address")
 	printCmd.Flag("address")
@@ -88,7 +76,6 @@ func init() {
 	sendCmd.Flag("miner")
 	sendCmd.Flag("data")
 
-	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(printCmd)
 	rootCmd.AddCommand(getBalanceCmd)
 	rootCmd.AddCommand(sendCmd)
@@ -99,13 +86,6 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}
-
-func addBlock(blockChain *BlockChain) {
-	fmt.Println("Start adding block data")
-	txs := []*Transaction{}
-	blockChain.AddBlock(txs)
-	fmt.Println("Add successfully")
 }
 
 func printChain(blockChain *BlockChain) {
