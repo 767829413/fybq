@@ -152,7 +152,7 @@ func VerifySignatureECC(plainText, r, s []byte, pubKeyPath string) (bool, error)
 }
 
 func main() {
-	util.GenerateEccKey(elliptic.P384(), "/tmp/key/ecdsa/pri.pem", "/tmp/key/ecdsa/pub.pem")
+	util.GenerateEccKeyFile(elliptic.P384(), "/tmp/key/ecdsa/pri.pem", "/tmp/key/ecdsa/pub.pem")
 
 	plainText1 := []byte("sdsdsdsdsdssds")
 	plainText2 := []byte("gffgfdhfgjfgjj")

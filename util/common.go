@@ -131,7 +131,7 @@ func GenerateRsaKey(rsaKeyLen int, priPath, pubPath string) error {
 }
 
 // 生成ECC密钥对
-func GenerateEccKey(c elliptic.Curve, priPath, pubPath string) error {
+func GenerateEccKeyFile(c elliptic.Curve, priPath, pubPath string) error {
 	// 私钥生成流程
 	// 使用crypto/ecdsa的(GenerateKey)来生成密钥对
 	priKey, err := ecdsa.GenerateKey(c, rand.Reader)
@@ -178,6 +178,73 @@ func GenerateEccKey(c elliptic.Curve, priPath, pubPath string) error {
 		return err
 	}
 	return nil
+}
+
+// 生成ECC密钥对
+func GenerateEccKeyBytes(c elliptic.Curve) (priKeyBytes, pubKeyBytes []byte, err error) {
+	// 私钥生成流程
+	// 使用crypto/ecdsa的(GenerateKey)来生成密钥对
+	priKey, err := ecdsa.GenerateKey(c, rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
+	//1. 使用x509(MarshalECPrivateKey)将私钥序列化
+	derText, err := x509.MarshalECPrivateKey(priKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	//2. 将序列化的数据放到pem.Block结构体中
+	blockPri := &pem.Block{
+		Type:  "ecdsa private key",
+		Bytes: derText,
+	}
+	//3. 使用pem.Encode()编码
+	var (
+		bufPri bytes.Buffer
+		bufPub bytes.Buffer
+	)
+	pem.Encode(&bufPri, blockPri)
+	priKeyBytes = bufPri.Bytes()
+	// 公钥生成流程
+	// 1. 使用x509(MarshalPKIXPublicKey)将私钥序列化
+	derStream, err := x509.MarshalPKIXPublicKey(&priKey.PublicKey)
+	if err != nil {
+		return nil, nil, err
+	}
+	// 2. 将序列化的数据放到pem.Block结构体中
+	blockPub := &pem.Block{
+		Type:  "ecdsa public key",
+		Bytes: derStream,
+	}
+	// 3. 使用pem.Encode()编码
+	err = pem.Encode(&bufPub, blockPub)
+	if err != nil {
+		return nil, nil, err
+	}
+	pubKeyBytes = bufPub.Bytes()
+	return
+}
+
+func ParseEccKeyBytes(priKeyBytes, pubKeyBytes []byte) (priKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, err error) {
+	// pem解码
+	blockPri, _ := pem.Decode(priKeyBytes)
+	// x509规范解码
+	priKey, err = x509.ParseECPrivateKey(blockPri.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	// pem解码
+	blockPub, _ := pem.Decode(pubKeyBytes)
+	// x509规范解码
+	pubAny, err := x509.ParsePKIXPublicKey(blockPub.Bytes)
+	if err != nil {
+		return nil, nil, err
+	}
+	pubKey, ok := pubAny.(*ecdsa.PublicKey)
+	if !ok {
+		return nil, nil, fmt.Errorf("public key type conversion failed")
+	}
+	return
 }
 
 // uint64转[]byte
