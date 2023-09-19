@@ -85,7 +85,7 @@ func (bc *BlockChain) FindTransactionUTXOs(addr string, amount float64) (map[str
 		}
 		return false
 	}
-	bc.IterativeTransactions(f)
+	bc.IterativeTransactions(addr, f)
 	return UTXO, calc
 }
 
@@ -115,11 +115,11 @@ func (bc *BlockChain) FindUTXOs(addr string) []*TXOutput {
 		}
 		return false
 	}
-	bc.IterativeTransactions(f)
+	bc.IterativeTransactions(addr, f)
 	return UTXO
 }
 
-func (bc *BlockChain) IterativeTransactions(f func(a ...any) bool) {
+func (bc *BlockChain) IterativeTransactions(addr string, f func(a ...any) bool) {
 	var spendUTXOs = make(map[string][]int64)
 	bci := bc.NewIterator()
 	// 遍历区块

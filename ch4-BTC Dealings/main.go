@@ -1,10 +1,10 @@
 package main
 
-import (
-	// easyv4 "github.com/767829413/fybq/demo/easy-v4"
-	easyv5 "github.com/767829413/fybq/demo/easy-v5"
-)
+import easy_cmd "github.com/767829413/fybq/demo/easy-v5/cmd"
+
+// easyv4 "github.com/767829413/fybq/demo/easy-v4"
+// easy_cmd "github.com/767829413/fybq/demo/easy-v5/cmd/easy_cmd"
 
 func main() {
-	easyv5.Execute()
+	easy_cmd.Execute()
 }
