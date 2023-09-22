@@ -13,7 +13,6 @@ var (
 	from   string
 	to     string
 	amount float64
-	miner  string
 )
 
 var rootCmd = &cobra.Command{

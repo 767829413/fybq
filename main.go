@@ -5,10 +5,13 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"log"
 )
 
 func main() {
+	fff := []int{1,2,3,4,5}
+	fmt.Println(fff[len(fff)-4:])
 	// 创建曲线
 	curve := elliptic.P256()
 	// 生成私钥]

@@ -8,7 +8,7 @@ import (
 )
 
 func blockInit() {
-	printCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "addBlock address (required)")
+	printCmd.PersistentFlags().StringVarP(&addr, "address", "r", "YOUR_ADDRESS", "printChain address (required)")
 	printCmd.MarkPersistentFlagRequired("address")
 	printCmd.Flag("address")
 }
@@ -38,7 +38,7 @@ func printChain(blockChain *easyv5.BlockChain) {
 		fmt.Printf("Nonce: %x\n", block.Nonce)
 		fmt.Printf("Current block hash: %x\n", block.Hash)
 		if len(block.Transactions) != 0 {
-			fmt.Printf("Data: %s\n", block.Transactions[0].TXInputs[0].Sig)
+			fmt.Printf("Data: %s\n", block.Transactions[0].TXInputs[0].PubKey)
 		}
 	}
 	blockChain.CloseDB()

@@ -6,6 +6,8 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+
+	"github.com/767829413/fybq/util"
 )
 
 const (
@@ -13,14 +15,28 @@ const (
 )
 
 type TXInput struct {
-	QTXID []byte // 引用的交易ID
-	Index int64  // 引用的Output的索引值
-	Sig   string // 解锁脚本
+	QTXID     []byte // 引用的交易ID
+	Index     int64  // 引用的Output的索引值
+	Signature []byte // 签名
+	PubKey    []byte // 公钥,非原始数据
 }
 
 type TXOutput struct {
 	Value      float64 // 转账金额
-	PubKeyHash string  // 锁定脚本,用地址模拟
+	PubKeyHash []byte  // 收款方公钥哈希
+}
+
+// 处理地址到公钥哈希
+func (txo *TXOutput) lock(addr string) {
+	txo.PubKeyHash = util.GetPubKeyHashByAddr(addr)
+}
+
+func NewTXOutput(value float64, addr string) *TXOutput {
+	out := &TXOutput{
+		Value: value,
+	}
+	out.lock(addr)
+	return out
 }
 
 type Transaction struct {
@@ -55,8 +71,8 @@ func (tx *Transaction) IsCoinbase() bool {
 // 没有引用的Output的索引值
 // 矿工由于挖矿时无需指定签名,所以签名sig字段自由填写,一般是矿池名字
 func NewCoinbase(addr, data string) *Transaction {
-	input := &TXInput{Sig: data, Index: -1, QTXID: nil}
-	output := &TXOutput{Value: reward, PubKeyHash: addr}
+	input := &TXInput{Signature: nil, Index: -1, QTXID: nil, PubKey: []byte(data)}
+	output := NewTXOutput(reward, addr)
 	tx := &Transaction{
 		TXInputs:  []*TXInput{input},
 		TXOutputs: []*TXOutput{output},
@@ -71,8 +87,19 @@ func NewTransaction(from, to string, amount float64, bc *BlockChain) *Transactio
 		inputs  []*TXInput
 		outputs []*TXOutput
 	)
+	// 创建交易前需要用钱包,通过地址找到对应的钱包
+	wallet, ok := GetWallets().WalletsMap[from]
+	if !ok {
+		fmt.Println("Sender's wallet not found")
+		return nil
+	}
 	// 1. 找到合理的UTXO集合
-	utxos, calc := bc.FindTransactionUTXOs(from, amount)
+	pubKeyHash, err := util.GetPubKeyHash(wallet.PubKey)
+	if err != nil {
+		fmt.Println("Get public hash key error: ", err.Error())
+		return nil
+	}
+	utxos, calc := bc.FindTransactionUTXOs(pubKeyHash, amount)
 	if calc < amount {
 		fmt.Printf("%x Current balance is insufficient!", from)
 		return nil
@@ -81,18 +108,19 @@ func NewTransaction(from, to string, amount float64, bc *BlockChain) *Transactio
 	for idx, idxArr := range utxos {
 		for _, index := range idxArr {
 			input := &TXInput{
-				QTXID: []byte(idx),
-				Index: index,
-				Sig:   from,
+				QTXID:     []byte(idx),
+				Index:     index,
+				Signature: nil,
+				PubKey:    wallet.PubKey,
 			}
 			inputs = append(inputs, input)
 		}
 	}
 	// 3. 创建output
-	output := &TXOutput{Value: amount, PubKeyHash: to}
+	output := NewTXOutput(amount, to)
 	outputs = append(outputs, output)
 	if calc > amount {
-		outputs = append(outputs, &TXOutput{Value: calc - amount, PubKeyHash: from})
+		outputs = append(outputs, NewTXOutput(calc-amount, from))
 	}
 	// 4. 如果有零钱需要找零
 	tx := &Transaction{

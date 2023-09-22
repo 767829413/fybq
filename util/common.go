@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/binary"
 	"encoding/gob"
@@ -17,6 +18,9 @@ import (
 	"path/filepath"
 	"time"
 	"unsafe"
+
+	"github.com/btcsuite/btcd/btcutil/base58"
+	"golang.org/x/crypto/ripemd160"
 )
 
 const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -225,26 +229,71 @@ func GenerateEccKeyBytes(c elliptic.Curve) (priKeyBytes, pubKeyBytes []byte, err
 	return
 }
 
-func ParseEccKeyBytes(priKeyBytes, pubKeyBytes []byte) (priKey *ecdsa.PrivateKey, pubKey *ecdsa.PublicKey, err error) {
+func ParseEccPriKeyBytes(priKeyBytes []byte) (priKey *ecdsa.PrivateKey, err error) {
 	// pem解码
 	blockPri, _ := pem.Decode(priKeyBytes)
 	// x509规范解码
 	priKey, err = x509.ParseECPrivateKey(blockPri.Bytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
+	return
+}
+
+func ParseEccPubKeyBytes(pubKeyBytes []byte) (pubKey *ecdsa.PublicKey, err error) {
 	// pem解码
 	blockPub, _ := pem.Decode(pubKeyBytes)
 	// x509规范解码
 	pubAny, err := x509.ParsePKIXPublicKey(blockPub.Bytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	pubKey, ok := pubAny.(*ecdsa.PublicKey)
 	if !ok {
-		return nil, nil, fmt.Errorf("public key type conversion failed")
+		return nil, fmt.Errorf("public key type conversion failed")
 	}
 	return
+}
+
+func GetPubKeyHash(pubKey []byte) ([]byte, error) {
+	hash := sha256.Sum256(pubKey)
+	// 获取rip160后的公钥hash
+	return GetRipemd160Hash(hash[:])
+}
+
+func GetPubKeyHashByAddr(addr string) []byte {
+	// base58解码地址
+	payLoad := base58.Decode(addr)
+	// 获取rip160后的公钥hash,去掉前一个字节的version和后四个字节的checksum
+	payLoad = payLoad[1 : len(payLoad)-4]
+	return payLoad
+}
+
+func Checksum(data []byte) []byte {
+	// 两次 sha256
+	preHash1 := sha256.Sum256(data)
+	preHash2 := sha256.Sum256(preHash1[:])
+	// 返回前4字节作为校验码
+	return preHash2[:4]
+}
+
+func IsAvailableAddress(addr string) bool {
+	// base58解码地址
+	addrBytes := base58.Decode(addr)
+	// 获取rip160后的公钥hash,去掉前一个字节的version和后四个字节的checksum
+	payLoad := addrBytes[:len(addrBytes)-4]
+	checkSumAddr := addrBytes[len(addrBytes)-4:]
+	checkSum := Checksum(payLoad)
+	return bytes.Equal(checkSumAddr, checkSum)
+}
+
+func GetRipemd160Hash(data []byte) ([]byte, error) {
+	rip160hasher := ripemd160.New()
+	_, err := rip160hasher.Write(data)
+	if err != nil {
+		return nil, err
+	}
+	return rip160hasher.Sum(nil), nil
 }
 
 // uint64转[]byte

@@ -1,6 +1,7 @@
 package easyv5
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 
@@ -45,7 +46,7 @@ func (bc *BlockChain) CloseDB() error {
 	return bc.db.Close()
 }
 
-func (bc *BlockChain) FindTransactionUTXOs(addr string, amount float64) (map[string][]int64, float64) {
+func (bc *BlockChain) FindTransactionUTXOs(pubKeyHash []byte, amount float64) (map[string][]int64, float64) {
 	// 找到的合理的UTXO集合
 	var UTXO = make(map[string][]int64)
 	// 包含的总额
@@ -65,7 +66,7 @@ func (bc *BlockChain) FindTransactionUTXOs(addr string, amount float64) (map[str
 			return calc >= amount
 		}
 		// 通过addr匹配区分
-		if out.PubKeyHash == addr {
+		if bytes.Equal(out.PubKeyHash, pubKeyHash) {
 			if indexArr, ok := spendUTXOs[string(tx.TXID)]; !ok {
 				if ff() {
 					return true
@@ -85,12 +86,12 @@ func (bc *BlockChain) FindTransactionUTXOs(addr string, amount float64) (map[str
 		}
 		return false
 	}
-	bc.IterativeTransactions(addr, f)
+	bc.IterativeTransactions(pubKeyHash, f)
 	return UTXO, calc
 }
 
 // 找到指定地址的所有UTXO
-func (bc *BlockChain) FindUTXOs(addr string) []*TXOutput {
+func (bc *BlockChain) FindUTXOs(pubKeyHash []byte) []*TXOutput {
 	var UTXO []*TXOutput
 	f := func(a ...any) bool {
 		tx := a[0].(*Transaction)
@@ -99,7 +100,7 @@ func (bc *BlockChain) FindUTXOs(addr string) []*TXOutput {
 		spendUTXOs := a[3].(map[string][]int64)
 		var flag = true
 		// 通过addr匹配区分
-		if out.PubKeyHash == addr {
+		if bytes.Equal(out.PubKeyHash, pubKeyHash) {
 			if indexArr, ok := spendUTXOs[string(tx.TXID)]; !ok {
 				UTXO = append(UTXO, out)
 			} else {
@@ -115,11 +116,11 @@ func (bc *BlockChain) FindUTXOs(addr string) []*TXOutput {
 		}
 		return false
 	}
-	bc.IterativeTransactions(addr, f)
+	bc.IterativeTransactions(pubKeyHash, f)
 	return UTXO
 }
 
-func (bc *BlockChain) IterativeTransactions(addr string, f func(a ...any) bool) {
+func (bc *BlockChain) IterativeTransactions(pubKeyHash []byte, f func(a ...any) bool) {
 	var spendUTXOs = make(map[string][]int64)
 	bci := bc.NewIterator()
 	// 遍历区块
@@ -145,7 +146,11 @@ func (bc *BlockChain) IterativeTransactions(addr string, f func(a ...any) bool) 
 				// 遍历Input,找到花费的utxo
 				for _, in := range tx.TXInputs {
 					// 寻找对应地址的input
-					if in.Sig == addr {
+					inPubKeyHash, err := util.GetPubKeyHash(in.PubKey)
+					if err != nil {
+						log.Panic("IterativeTransactions GetPubKeyHash error: ", err)
+					}
+					if bytes.Equal(inPubKeyHash, pubKeyHash) {
 						idx := string(in.QTXID)
 						indexArr := spendUTXOs[idx]
 						indexArr = append(indexArr, in.Index)
@@ -158,6 +163,9 @@ func (bc *BlockChain) IterativeTransactions(addr string, f func(a ...any) bool) 
 }
 
 func NewBlockChain(addr string) *BlockChain {
+	if !util.IsAvailableAddress(addr) {
+		log.Fatal("Your address is not legal")
+	}
 	db, err := bolt.Open(blockChainDbName, 0600, nil)
 	if err != nil {
 		log.Fatal(err)
