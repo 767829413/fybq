@@ -2,6 +2,7 @@ package easyv5
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
@@ -63,6 +64,10 @@ func (tx *Transaction) SetTXID() {
 func (tx *Transaction) IsCoinbase() bool {
 	return len(tx.TXInputs) == 1 && tx.TXInputs[0].Index == -1 && tx.TXInputs[0].QTXID == nil
 }
+
+// 签名
+// 参数是私钥和inputs里所有引用的交易结构map[string]Transaction,id作为key
+func (tx *Transaction) Signature(priKey *ecdsa.PrivateKey, prevTXs map[string]Transaction) {}
 
 // 创建Coinbase交易(挖矿交易)
 // 挖矿交易特点:
@@ -128,5 +133,26 @@ func NewTransaction(from, to string, amount float64, bc *BlockChain) *Transactio
 		TXOutputs: outputs,
 	}
 	tx.SetTXID()
+
+	// 做签名
+	// 1. 根据inputs进行遍历可以获得对应的TXID
+	// 2. 目标交易根据TXID来对应
+	// 3. 添加到prevTXs
+	prevTXs := make(map[string]Transaction)
+	for _, inps := range tx.TXInputs {
+		qtx := FindTransactionByID(inps.QTXID)
+		prevTXs[string(qtx.TXID)] = qtx
+	}
+
+	if !ok {
+		fmt.Println("NewTransaction.ParseEccPriKeyBytes is error: ", err)
+		return nil
+	}
+	priKey, err := util.ParseEccPriKeyBytes(wallet.PriKey)
+	tx.Signature(priKey, prevTXs)
 	return tx
+}
+
+func FindTransactionByID(TXID []byte) Transaction {
+	return Transaction{}
 }
