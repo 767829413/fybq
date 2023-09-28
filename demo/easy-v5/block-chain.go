@@ -20,7 +20,20 @@ type BlockChain struct {
 	lastHash []byte
 }
 
+func (bc *BlockChain) Verify(txs []*Transaction) bool {
+	for _, tx := range txs {
+		prevTXs := bc.getPrevTXsSignature(tx)
+		if !tx.Verify(prevTXs) {
+			log.Printf("verify TXID %v is Illegal", tx.TXID)
+			return false
+		}
+	}
+	return true
+}
+
 func (bc *BlockChain) AddBlock(txs []*Transaction) {
+	// TODO Verify txs
+	bc.Verify(txs)
 	block := NewBlock(txs, bc.lastHash)
 	bc.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(blockBucketName))
@@ -160,6 +173,56 @@ func (bc *BlockChain) IterativeTransactions(pubKeyHash []byte, f func(a ...any) 
 			}
 		}
 	}
+}
+
+func (bc *BlockChain) SignatureTXs(priKeyBytes []byte, tx *Transaction) error {
+	prevTXs := bc.getPrevTXsSignature(tx)
+	priKey, err := util.ParseEccPriKeyBytes(priKeyBytes)
+	if err != nil {
+		fmt.Println("NewTransaction.ParseEccPriKeyBytes error: ", err.Error())
+		return err
+	}
+	err = tx.Signature(priKey, prevTXs)
+	if err != nil {
+		fmt.Println("NewTransaction.Signature error: ", err.Error())
+		return err
+	}
+	return nil
+}
+
+// 获取签名前置数据
+// 1. 根据inputs进行遍历可以获得对应的TXID
+// 2. 目标交易根据TXID来对应
+// 3. 添加到prevTXs
+func (bc *BlockChain) getPrevTXsSignature(tx *Transaction) map[string]*Transaction {
+	prevTXs := make(map[string]*Transaction)
+	for _, inps := range tx.TXInputs {
+		qtx := bc.FindTransactionByID(inps.QTXID)
+		if qtx != nil {
+			prevTXs[string(qtx.TXID)] = qtx
+		}
+	}
+	return prevTXs
+}
+
+// 根据ID寻找对应交易数据
+// 1. 遍历区块链
+// 2. 遍历交易
+// 3. 比较交易,找到直接退出
+func (bc *BlockChain) FindTransactionByID(TXID []byte) *Transaction {
+	bci := bc.NewIterator()
+	for {
+		block := bci.Next()
+		if block == nil {
+			break
+		}
+		for _, tx := range block.Transactions {
+			if bytes.Equal(tx.TXID, TXID) {
+				return tx
+			}
+		}
+	}
+	return nil
 }
 
 func NewBlockChain(addr string) *BlockChain {
