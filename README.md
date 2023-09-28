@@ -17,10 +17,11 @@ Usage:
   mbc [command]
 
 Available Commands:
-  addBlock    Add a block,--data or -d DATA
   completion  Generate the autocompletion script for the specified shell
   getBalance  FROM makes a transaction to TO
   help        Help about any command
+  listAddr    List Addresses
+  newWallet   Create a wallet
   printChain  Print block chain data
   send        FROM makes a single transaction to TO while MINER mines and writes to DATA
 
