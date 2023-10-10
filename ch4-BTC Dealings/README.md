@@ -159,7 +159,3 @@
     
 7. UTXO模拟流程图
     * ![1.png](https://s2.loli.net/2023/09/11/KNih5e9gcGYu7IM.png)
-
-## 补充
-
-1. 手续费
